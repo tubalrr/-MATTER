@@ -25,5 +25,22 @@ Error generating stack: `+u.message+`
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
   
-</body>
-</html>
+<script>
+(function(){
+  const pages=[
+    ["Home","index.html"],["Dashboard","dashboard.html"],["Budget","budget.html"],
+    ["Calendar","calendar.html"],["Goals","goals.html"],["Habits","habits.html"],
+    ["Library","library.html"],["Notes","notes.html"],["Planner","planner.html"],["Projects","projects.html"]
+  ];
+  function mount(){
+    if(document.getElementById("lifehub-global-nav")) return;
+    const nav=document.createElement("nav");
+    nav.id="lifehub-global-nav";
+    nav.innerHTML='<div class="lh-nav-inner">'+pages.map(p=>'<a href="'+p[1]+'">'+p[0]+'</a>').join("")+'</div>';
+    const style=document.createElement("style");
+    style.textContent="#lifehub-global-nav{position:fixed;top:0;left:0;right:0;z-index:99999;padding:10px 14px;background:rgba(20,16,13,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.1);font-family:Inter,system-ui,sans-serif}#lifehub-global-nav .lh-nav-inner{display:flex;gap:7px;overflow-x:auto;max-width:1600px;margin:auto;scrollbar-width:none}#lifehub-global-nav .lh-nav-inner::-webkit-scrollbar{display:none}#lifehub-global-nav a{flex:0 0 auto;color:#faf6f0;text-decoration:none;padding:7px 12px;border-radius:999px;font-size:12px;white-space:nowrap;background:rgba(255,255,255,.06)}#lifehub-global-nav a:hover{background:#d9a679;color:#1e1712}";
+    document.head.appendChild(style);document.body.prepend(nav);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mount); else mount();
+})();
+</script></body></html>
