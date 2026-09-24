@@ -211,6 +211,7 @@ function ProfileView(){
 }
 
 
+
 function Fi(){
   const {readArray,write}=MatterStore();
   const [activeView,setActiveView]=sA.useState("Today");
@@ -231,16 +232,46 @@ function Fi(){
   sA.useEffect(()=>write("matter_projects",projects),[projects]);
   sA.useEffect(()=>{try{localStorage.setItem("matter_reflection",reflection)}catch(e){}},[reflection]);
 
-  const addTask=()=>{const title=taskText.trim();if(!title)return;setTasks(v=>[{id:Date.now().toString(),title,completed:false,createdAt:new Date().toISOString()},...v]);setTaskText("")};
+  const addTask=()=>{
+    const title=taskText.trim();
+    if(!title)return;
+    setTasks(v=>[{id:Date.now().toString(),title,completed:false,createdAt:new Date().toISOString()},...v]);
+    setTaskText("");
+  };
   const toggleTask=id=>setTasks(v=>v.map(x=>x.id===id?{...x,completed:!x.completed}:x));
-  const addHabit=()=>{const name=habitText.trim();if(!name)return;setHabits(v=>[{id:Date.now().toString(),name,logs:[],createdAt:new Date().toISOString()},...v]);setHabitText("")};
-  const toggleHabit=id=>setHabits(v=>v.map(h=>{if(h.id!==id)return h;const logs=Array.isArray(h.logs)?h.logs.slice():[];const i=logs.indexOf(today);if(i>=0)logs.splice(i,1);else logs.push(today);return{...h,logs}}));
-  const addNote=()=>{const text=noteText.trim();if(!text)return;setNotes(v=>[{id:Date.now().toString(),content:text,createdAt:new Date().toISOString()},...v]);setNoteText("")};
-  const addProject=()=>{const title=projectText.trim();if(!title)return;setProjects(v=>[{id:Date.now().toString(),title,status:"Todo",createdAt:new Date().toISOString()},...v]);setProjectText("")};
-  const cycleProject=id=>setProjects(v=>v.map(p=>p.id===id?{...p,status:p.status==="Todo"?"Doing":p.status==="Doing"?"Done":"Todo"}:p));
 
-  const shellStyle={minHeight:"100vh",background:"#0E0E0C",color:"#F0E9DD",fontFamily:"Inter,ui-sans-serif,system-ui,sans-serif"};
-  const cardStyle={background:"#FFFBF2",color:"#1A1A18",border:"1px solid #F0E9DD",borderRadius:20,boxShadow:"0 4px 24px rgba(0,0,0,.04)"};
+  const addHabit=()=>{
+    const name=habitText.trim();
+    if(!name)return;
+    setHabits(v=>[{id:Date.now().toString(),name,logs:[],createdAt:new Date().toISOString()},...v]);
+    setHabitText("");
+  };
+  const toggleHabit=id=>setHabits(v=>v.map(h=>{
+    if(h.id!==id)return h;
+    const logs=Array.isArray(h.logs)?h.logs.slice():[];
+    const i=logs.indexOf(today);
+    if(i>=0)logs.splice(i,1);else logs.push(today);
+    return {...h,logs};
+  }));
+
+  const addNote=()=>{
+    const value=noteText.trim();
+    if(!value)return;
+    setNotes(v=>[{id:Date.now().toString(),content:value,createdAt:new Date().toISOString()},...v]);
+    setNoteText("");
+  };
+
+  const addProject=()=>{
+    const title=projectText.trim();
+    if(!title)return;
+    setProjects(v=>[{id:Date.now().toString(),title,status:"Todo",createdAt:new Date().toISOString()},...v]);
+    setProjectText("");
+  };
+  const cycleProject=id=>setProjects(v=>v.map(p=>{
+    if(p.id!==id)return p;
+    return {...p,status:p.status==="Todo"?"Doing":p.status==="Doing"?"Done":"Todo"};
+  }));
+
   const navItems=[
     {key:"Today",icon:"◉"},
     {key:"Planner",icon:"◫"},
@@ -250,7 +281,39 @@ function Fi(){
     {key:"Profile",icon:"◎"}
   ];
 
-  const renderList=(items,empty,renderFn)=>items.length?items.map(renderFn):d("div",{className:"text-center text-[12px] text-[#8C877E] py-8 border border-dashed border-[#F0E9DD] rounded-[14px]",children:empty});
+  const input=(value,onChange,onKeyDown,placeholder)=>{
+    return a("input",{value,onChange,onKeyDown,placeholder,className:"w-full h-11 rounded-full px-4 border border-[#E7DDD0] bg-white text-[13px] outline-none"});
+  };
+  const goldButton=(label,onClick)=>{
+    return a("button",{type:"button",onClick,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:label});
+  };
+  const emptyState=(text)=>{
+    return a("div",{className:"text-center text-[12px] text-[#8C877E] py-8 border border-dashed border-[#E7DDD0] rounded-[14px]",children:text});
+  };
+
+  const taskRows=(limit)=>{
+    const items=limit?tasks.slice(0,limit):tasks;
+    if(!items.length)return emptyState("No tasks saved yet.");
+    return d("div",{children:items.map(t=>d("button",{type:"button",onClick:()=>toggleTask(t.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[
+      d("span",{className:t.completed?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center text-[11px]":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center text-[11px]",children:t.completed?"✓":""}),
+      a("span",{className:t.completed?"text-[13px] line-through text-[#9A928A]":"text-[13px]",children:t.title})
+    ]},t.id))});
+  };
+
+  const habitRows=(limit)=>{
+    const items=limit?habits.slice(0,limit):habits;
+    if(!items.length)return emptyState("No habits saved yet.");
+    return d("div",{children:items.map(h=>{
+      const checked=Array.isArray(h.logs)&&h.logs.includes(today);
+      return d("button",{type:"button",onClick:()=>toggleHabit(h.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[
+        d("span",{className:checked?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center text-[11px]":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center text-[11px]",children:checked?"✓":""}),
+        d("div",{className:"flex-1",children:[
+          a("div",{className:"text-[13px]",children:h.name||"Untitled habit"}),
+          a("div",{className:"text-[10px] text-[#8C877E] mt-1",children:[String(Array.isArray(h.logs)?h.logs.length:0)," logged days"]})
+        ]})
+      ]},h.id);
+    })});
+  };
 
   let body;
   if(activeView==="Profile"){
@@ -258,80 +321,96 @@ function Fi(){
   }else if(activeView==="Today"){
     body=d("div",{className:"space-y-5",children:[
       d("div",{className:"grid grid-cols-1 lg:grid-cols-2 gap-4",children:[
-        d("section",{style:cardStyle,className:"p-6 sm:p-7",children:[
-          a("div",{className:"text-[10px] tracking-[.16em] uppercase text-[#8C877E] font-semibold",children:"Today"}),
-          a("h1",{className:"serif text-[38px] sm:text-[44px] leading-none mt-3 tracking-[-.04em]",children:"Organize what matters."}),
-          a("p",{className:"text-[13px] text-[#8C877E] mt-3 leading-[1.6]",children:"Only your saved data appears here."}),
+        d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.04)]",children:[
+          a("div",{className:"text-[10px] uppercase tracking-[.16em] text-[#8C877E] font-semibold",children:"Today"}),
+          a("h1",{className:"serif text-[38px] leading-none mt-3 tracking-[-.04em]",children:"Organize what matters."}),
+          a("p",{className:"text-[13px] text-[#8C877E] mt-3",children:"Only your saved data appears here."}),
           d("div",{className:"flex gap-2 mt-5",children:[
-            a("input",{value:taskText,onChange:e=>setTaskText(e.target.value),onKeyDown:e=>e.key==="Enter"&&addTask(),placeholder:"Add a real task…",className:"flex-1 h-11 rounded-full border border-[#E7DDD0] bg-white px-4 text-[13px] outline-none"}),
-            a("button",{onClick:addTask,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:"Add"})
+            input(taskText,e=>setTaskText(e.target.value),e=>{if(e.key==="Enter")addTask()},"Add a real task…"),
+            goldButton("Add",addTask)
           ]}),
           d("div",{className:"grid grid-cols-3 gap-2 mt-5",children:[
-            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] uppercase tracking-wide text-[#8C877E]",children:"Open"}),a("div",{className:"serif text-[22px] mt-1",children:String(tasks.filter(t=>!t.completed).length)})]}),
-            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] uppercase tracking-wide text-[#8C877E]",children:"Done"}),a("div",{className:"serif text-[22px] mt-1",children:String(tasks.filter(t=>t.completed).length)})]}),
-            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] uppercase tracking-wide text-[#8C877E]",children:"Habits"}),a("div",{className:"serif text-[22px] mt-1",children:String(habits.length)})]})
+            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] text-[#8C877E] uppercase",children:"Open"}),a("div",{className:"serif text-[22px] mt-1",children:String(tasks.filter(t=>!t.completed).length)})]}),
+            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] text-[#8C877E] uppercase",children:"Done"}),a("div",{className:"serif text-[22px] mt-1",children:String(tasks.filter(t=>t.completed).length)})]}),
+            d("div",{className:"rounded-[14px] bg-black/[0.04] p-3",children:[a("div",{className:"text-[10px] text-[#8C877E] uppercase",children:"Habits"}),a("div",{className:"serif text-[22px] mt-1",children:String(habits.length)})]})
           ]})
         ]}),
-        d("section",{className:"rounded-[20px] p-6 bg-[#161310] border border-white/[0.07]",children:[
-          a("div",{className:"text-[10px] tracking-[.16em] uppercase text-[#8C877E] font-semibold",children:"Reflection"}),
-          a("h2",{className:"serif text-[22px] text-[#FFFBF2] mt-3",children:"What mattered today?"}),
-          a("textarea",{value:reflection,onChange:e=>setReflection(e.target.value),placeholder:"Write one honest sentence…",className:"w-full min-h-[150px] mt-4 rounded-[16px] bg-white/[0.04] border border-white/[0.08] p-3 text-[13px] text-[#FFFBF2] outline-none resize-y"}),
-          a("div",{className:"text-[10px] text-[#6f665f] mt-2",children:"Saved locally."})
+        d("section",{className:"rounded-[20px] bg-[#161310] text-[#FFFBF2] border border-white/[0.07] p-6",children:[
+          a("div",{className:"text-[10px] uppercase tracking-[.16em] text-[#8C877E] font-semibold",children:"Reflection"}),
+          a("h2",{className:"serif text-[22px] mt-3",children:"What mattered today?"}),
+          a("textarea",{value:reflection,onChange:e=>setReflection(e.target.value),placeholder:"Write one honest sentence…",className:"w-full min-h-[150px] mt-4 rounded-[16px] bg-white/[0.04] border border-white/[0.08] p-3 text-[13px] text-[#FFFBF2] outline-none resize-y"})
         ]})
       ]}),
       d("div",{className:"grid grid-cols-1 lg:grid-cols-2 gap-4",children:[
-        d("section",{style:cardStyle,className:"p-5",children:[
-          d("div",{className:"flex items-center justify-between mb-3",children:[a("h2",{className:"serif text-[20px]",children:"Priorities"}),a("span",{className:"text-[10px] px-2 py-1 rounded-full bg-black/[0.04]",children:String(Math.min(tasks.length,3))})]}),
-          renderList(tasks.slice(0,3),"No priorities saved yet.",t=>d("button",{type:"button",onClick:()=>toggleTask(t.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[d("span",{className:t.completed?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center text-[11px]":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center text-[11px]",children:t.completed?"✓":""}),a("span",{className:t.completed?"text-[13px] line-through text-[#9A928A]":"text-[13px]",children:t.title})]},t.id))
+        d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:[
+          d("div",{className:"flex items-center justify-between mb-3",children:[a("h2",{className:"serif text-[20px]",children:"Priorities"}),a("span",{className:"text-[10px] px-2 py-1 rounded-full bg-black/[0.04]",children:String(Math.min(3,tasks.length))})]}),
+          taskRows(3)
         ]}),
-        d("section",{style:cardStyle,className:"p-5",children:[
-          d("div",{className:"flex items-center justify-between mb-3",children:[a("h2",{className:"serif text-[20px]",children:"Today’s rituals"}),a("button",{onClick:()=>setActiveView("Rituals"),className:"text-[11px] text-[#8a6042]",children:"Manage"})]}),
-          renderList(habits.slice(0,6),"No habits saved yet.",h=>d("button",{type:"button",onClick:()=>toggleHabit(h.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[d("span",{className:Array.isArray(h.logs)&&h.logs.includes(today)?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center text-[11px]":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center text-[11px]",children:Array.isArray(h.logs)&&h.logs.includes(today)?"✓":""}),a("span",{className:"text-[13px]",children:h.name||"Untitled habit"})]},h.id))
+        d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:[
+          d("div",{className:"flex items-center justify-between mb-3",children:[a("h2",{className:"serif text-[20px]",children:"Today’s rituals"}),a("button",{onClick:()=>setActiveView("Rituals"),className:"text-[11px] text-[#8a6042] border-0 bg-transparent",children:"Manage"})]}),
+          habitRows(6)
         ]})
       ]})
     ]});
   }else if(activeView==="Planner"){
     body=d("div",{className:"space-y-4",children:[
-      a("div",{className:"matter-v2-page-title text-[#FFFBF2]",children:"Planner"}),
-      a("p",{className:"matter-v2-muted",children:"Your saved tasks."}),
-      d("div",{className:"flex gap-2",children:[a("input",{value:taskText,onChange:e=>setTaskText(e.target.value),onKeyDown:e=>e.key==="Enter"&&addTask(),placeholder:"Add a task…",className:"flex-1 h-11 rounded-full px-4 border border-[#E7DDD0] bg-white text-[13px]"}),a("button",{onClick:addTask,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:"Add"})]}),
-      d("section",{style:cardStyle,className:"p-5",children:renderList(tasks,"No tasks saved yet.",t=>d("button",{type:"button",onClick:()=>toggleTask(t.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[d("span",{className:t.completed?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center",children:t.completed?"✓":""}),a("span",{className:t.completed?"text-[13px] line-through text-[#9A928A]":"text-[13px]",children:t.title})]},t.id))}
+      a("h1",{className:"serif text-[34px] text-[#FFFBF2]",children:"Planner"}),
+      a("p",{className:"text-[13px] text-[#8C877E]",children:"Your saved tasks."}),
+      d("div",{className:"flex gap-2",children:[input(taskText,e=>setTaskText(e.target.value),e=>{if(e.key==="Enter")addTask()},"Add a task…"),goldButton("Add",addTask)]}),
+      d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:taskRows(0)})
     ]});
   }else if(activeView==="Vault"){
     body=d("div",{className:"space-y-4",children:[
-      a("div",{className:"matter-v2-page-title text-[#FFFBF2]",children:"Vault"}),
-      a("p",{className:"matter-v2-muted",children:"Notes you have saved."}),
-      d("div",{className:"flex flex-col sm:flex-row gap-2",children:[a("textarea",{value:noteText,onChange:e=>setNoteText(e.target.value),placeholder:"Add a note…",className:"flex-1 min-h-[90px] rounded-[16px] px-4 py-3 border border-[#E7DDD0] bg-white text-[13px]"}),a("button",{onClick:addNote,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:"Save note"})]}),
-      d("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-3",children:renderList(notes,"No notes saved yet.",n=>d("article",{style:cardStyle,className:"p-5",children:[a("p",{className:"text-[14px] leading-[1.7]",children:n.content}),a("p",{className:"text-[10px] text-[#8C877E] mt-3",children:n.createdAt?new Date(n.createdAt).toLocaleString():""})]},n.id))})
+      a("h1",{className:"serif text-[34px] text-[#FFFBF2]",children:"Vault"}),
+      a("p",{className:"text-[13px] text-[#8C877E]",children:"Notes you have saved."}),
+      d("div",{className:"flex flex-col sm:flex-row gap-2",children:[
+        a("textarea",{value:noteText,onChange:e=>setNoteText(e.target.value),placeholder:"Add a note…",className:"flex-1 min-h-[90px] rounded-[16px] px-4 py-3 border border-[#E7DDD0] bg-white text-[13px] resize-y"}),
+        goldButton("Save note",addNote)
+      ]}),
+      d("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-3",children:notes.length?notes.map(n=>d("article",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:[
+        a("p",{className:"text-[14px] leading-[1.7]",children:n.content}),
+        a("p",{className:"text-[10px] text-[#8C877E] mt-3",children:n.createdAt?new Date(n.createdAt).toLocaleString():""})
+      ]},n.id)):emptyState("No notes saved yet.")})
     ]});
   }else if(activeView==="Rituals"){
     body=d("div",{className:"space-y-4",children:[
-      a("div",{className:"matter-v2-page-title text-[#FFFBF2]",children:"Rituals"}),
-      a("p",{className:"matter-v2-muted",children:"Habit logs saved by date."}),
-      d("div",{className:"flex gap-2",children:[a("input",{value:habitText,onChange:e=>setHabitText(e.target.value),onKeyDown:e=>e.key==="Enter"&&addHabit(),placeholder:"Add a habit…",className:"flex-1 h-11 rounded-full px-4 border border-[#E7DDD0] bg-white text-[13px]"}),a("button",{onClick:addHabit,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:"Add"})]}),
-      d("section",{style:cardStyle,className:"p-5",children:renderList(habits,"No habits saved yet.",h=>d("button",{type:"button",onClick:()=>toggleHabit(h.id),className:"w-full flex items-center gap-3 py-3 border-b border-[#F0E9DD] text-left",children:[d("span",{className:Array.isArray(h.logs)&&h.logs.includes(today)?"w-5 h-5 rounded-full bg-[#1A1A18] text-[#FFFBF2] grid place-items-center":"w-5 h-5 rounded-full border border-[#D8CFC4] grid place-items-center",children:Array.isArray(h.logs)&&h.logs.includes(today)?"✓":""}),d("div",{className:"flex-1",children:[a("div",{className:"text-[13px]",children:h.name||"Untitled habit"}),a("div",{className:"text-[10px] text-[#8C877E] mt-1",children:[Array.isArray(h.logs)?h.logs.length:0," logged days"]})]})]},h.id))}
+      a("h1",{className:"serif text-[34px] text-[#FFFBF2]",children:"Rituals"}),
+      a("p",{className:"text-[13px] text-[#8C877E]",children:"Your saved habits and daily logs."}),
+      d("div",{className:"flex gap-2",children:[input(habitText,e=>setHabitText(e.target.value),e=>{if(e.key==="Enter")addHabit()},"Add a habit…"),goldButton("Add",addHabit)]}),
+      d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:habitRows(0)})
     ]});
   }else{
     body=d("div",{className:"space-y-4",children:[
-      a("div",{className:"matter-v2-page-title text-[#FFFBF2]",children:"Flow"}),
-      a("p",{className:"matter-v2-muted",children:"Your saved projects."}),
-      d("div",{className:"flex gap-2",children:[a("input",{value:projectText,onChange:e=>setProjectText(e.target.value),onKeyDown:e=>e.key==="Enter"&&addProject(),placeholder:"Add a project…",className:"flex-1 h-11 rounded-full px-4 border border-[#E7DDD0] bg-white text-[13px]"}),a("button",{onClick:addProject,className:"h-11 px-5 rounded-full bg-[#C6A87D] text-[#1A1A18] text-[12px] font-semibold",children:"Add"})]}),
-      d("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3",children:["Todo","Doing","Done"].map(status=>d("section",{style:cardStyle,className:"p-5",children:[d("div",{className:"flex items-center justify-between",children:[a("h2",{className:"serif text-[20px]",children:status}),a("span",{className:"text-[10px] px-2 py-1 rounded-full bg-black/[0.04]",children:String(projects.filter(p=>p.status===status).length)})]}),projects.filter(p=>p.status===status).length?projects.filter(p=>p.status===status).map(p=>d("button",{type:"button",onClick:()=>cycleProject(p.id),className:"w-full text-left p-3 mt-2 rounded-[14px] border border-[#F0E9DD] bg-white",children:[a("div",{className:"text-[13px] font-semibold",children:p.title}),a("div",{className:"text-[10px] text-[#8C877E] mt-1",children:"Click to move →"})]},p.id)):a("div",{className:"text-center text-[11px] text-[#8C877E] py-8",children:"No projects yet."})]},status))}
+      a("h1",{className:"serif text-[34px] text-[#FFFBF2]",children:"Flow"}),
+      a("p",{className:"text-[13px] text-[#8C877E]",children:"Your saved projects."}),
+      d("div",{className:"flex gap-2",children:[input(projectText,e=>setProjectText(e.target.value),e=>{if(e.key==="Enter")addProject()},"Add a project…"),goldButton("Add project",addProject)]}),
+      d("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3",children:["Todo","Doing","Done"].map(status=>{
+        const list=projects.filter(p=>p.status===status);
+        return d("section",{className:"rounded-[20px] bg-[#FFFBF2] text-[#1A1A18] border border-[#F0E9DD] p-5",children:[
+          d("div",{className:"flex items-center justify-between",children:[a("h2",{className:"serif text-[20px]",children:status}),a("span",{className:"text-[10px] px-2 py-1 rounded-full bg-black/[0.04]",children:String(list.length)})]}),
+          list.length?list.map(p=>d("button",{type:"button",onClick:()=>cycleProject(p.id),className:"w-full text-left mt-2 p-3 rounded-[14px] border border-[#F0E9DD] bg-white",children:[
+            a("div",{className:"text-[13px] font-semibold",children:p.title}),
+            a("div",{className:"text-[10px] text-[#8C877E] mt-1",children:"Click to move →"})
+          ]},p.id)):a("div",{className:"text-[11px] text-[#8C877E] py-8 text-center",children:"No projects yet."})
+        ]},status);
+      })})
     ]});
   }
 
-  return d("div",{style:shellStyle,children:[
+  const shell=d("div",{className:"min-h-screen bg-[#0E0E0C] text-[#F0E9DD] antialiased",children:[
     d("div",{className:"flex min-h-screen",children:[
-      d("aside",{className:"hidden md:flex flex-col w-[250px] shrink-0 sticky top-0 h-screen p-4 border-r border-white/[0.06] bg-[#0E0E0C]",children:[
-        d("div",{className:"px-3 py-3",children:[a("div",{className:"text-[#FFFBF2] serif text-[22px]",children:"Matter"}),a("div",{className:"text-[#8C877E] text-[10px] tracking-[.15em] uppercase mt-1",children:"Organize what matters."})]}),
-        d("nav",{className:"space-y-1 mt-4",children:navItems.map(item=>a("button",{type:"button",onClick:()=>setActiveView(item.key),className:activeView===item.key?"w-full h-11 rounded-[12px] bg-[#FFFBF2] text-[#1A1A18] px-3 flex items-center gap-3 text-[13px] font-semibold":"w-full h-11 rounded-[12px] text-[#8C877E] px-3 flex items-center gap-3 text-[13px] hover:bg-white/[0.05]",children:[a("span",{className:"w-5 text-center",children:item.icon}),a("span",{children:item.key})]},item.key))})
+      d("aside",{className:"hidden md:flex w-[250px] shrink-0 sticky top-0 h-screen flex-col p-4 bg-[#0E0E0C] border-r border-white/[0.06]",children:[
+        d("div",{className:"px-3 py-3",children:[a("div",{className:"serif text-[22px] text-[#FFFBF2]",children:"Matter"}),a("div",{className:"text-[10px] text-[#8C877E] uppercase tracking-[.15em] mt-1",children:"Organize what matters."})]}),
+        d("nav",{className:"space-y-1 mt-4",children:navItems.map(item=>a("button",{type:"button",onClick:()=>setActiveView(item.key),className:activeView===item.key?"w-full h-11 rounded-[12px] bg-[#FFFBF2] text-[#1A1A18] px-3 flex items-center gap-3 text-[13px] font-semibold":"w-full h-11 rounded-[12px] text-[#8C877E] px-3 flex items-center gap-3 text-[13px] hover:bg-white/[0.05]",children:[a("span",{className:"w-5 text-center",children:item.icon}),a("span",{children:item.key})]},item.key))}),
+        d("div",{className:"mt-auto mx-2 mb-2 p-3 rounded-[16px] border border-white/[0.06] text-[10px] text-[#8C877E] leading-[1.5]",children:"Local-first · private by default"})
       ]}),
       d("main",{className:"flex-1 min-w-0",children:[
-        d("div",{className:"px-4 sm:px-6 lg:px-8 pt-5 pb-2 flex items-center justify-between",children:[a("div",{className:"text-[10px] tracking-[.16em] uppercase text-[#8C877E]",children:["Your space / ",activeView]}),a("div",{className:"text-[10px] text-[#8C877E]",children:"Local data"})]}),
+        d("div",{className:"px-4 sm:px-6 lg:px-8 pt-5 pb-2 flex items-center justify-between",children:[a("div",{className:"text-[10px] tracking-[.16em] uppercase text-[#8C877E]",children:["YOUR SPACE / ",activeView]}),a("div",{className:"text-[10px] text-[#8C877E]",children:"Local data"})]}),
         d("div",{className:"max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pb-8",children:body})
       ]})
     ]})
   ]});
+  return shell;
 }
 ks.createRoot(document.getElementById("root")).render(a(gs.default.StrictMode,{children:a(Fi,{})}));
 </script>
